@@ -1,0 +1,30 @@
+name: Build ARM64 IPA
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: brew install llvm lld ninja libarchive meson
+      - name: Build unsigned iOS app
+        run: |
+          set -o pipefail
+          xcodebuild -project iSH.xcodeproj -scheme iSH-ARM64 -configuration Release -sdk iphoneos -arch arm64 -derivedDataPath "$RUNNER_TEMP/ish-build" CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP=$(find "$RUNNER_TEMP/ish-build/Build/Products/Release-iphoneos" -maxdepth 1 -name '*.app' -type d -print -quit)
+          test -n "$APP"
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry iSH-ARM64-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iSH-ARM64-unsigned
+          path: iSH-ARM64-unsigned.ipa
+          if-no-files-found: error
