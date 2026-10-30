@@ -312,13 +312,19 @@ enum {
 }
 
 - (BOOL)validateTheme {
+    UIColor *errorColor;
+    if (@available(iOS 13.0, *)) {
+        errorColor = UIColor.systemRedColor;
+    } else {
+        errorColor = UIColor.redColor;
+    }
     BOOL validName = _nameTextField.text.length && ([_nameTextField.text isEqualToString:self.theme.name] || ![Theme themeForName:_nameTextField.text includingDefaultThemes:NO]);
-    _nameTextField.textColor = validName ? nil : UIColor.systemRedColor;
+    _nameTextField.textColor = validName ? nil : errorColor;
     [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:NameSection] withRowAnimation:UITableViewRowAnimationNone];
     BOOL validColors = YES;
     BOOL (^validColor)(UITextField *) = ^(UITextField *textField) {
         BOOL valid = !![[UIColor alloc] ish_initWithHexString:textField.text];
-        textField.textColor = valid ? nil : UIColor.systemRedColor;
+        textField.textColor = valid ? nil : errorColor;
         return valid;
     };
     for (int i = 0; i < sizeof(_paletteTextFields) / sizeof(*_paletteTextFields) - _singlePaletteSwitch.on; ++i) {
